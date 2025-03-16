@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TokenFlo Pattern Optimizer Demo</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    h1 {
+      color: #333;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 10px;
+    }
+    .container {
+      display: flex;
+      gap: 20px;
+    }
+    .column {
+      flex: 1;
+    }
+    textarea {
+      width: 100%;
+      height: 200px;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-family: inherit;
+      margin-bottom: 10px;
+      resize: vertical;
+    }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    .metrics {
+      background-color: #f8f9fa;
+      border-radius: 4px;
+      padding: 15px;
+      margin-top: 20px;
+    }
+    .metrics h3 {
+      margin-top: 0;
+    }
+    .metric {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 5px;
+    }
+    .patterns {
+      margin-top: 20px;
+    }
+    .patterns ul {
+      max-height: 200px;
+      overflow-y: auto;
+      padding-left: 20px;
+    }
+    .loading {
+      display: none;
+      text-align: center;
+      margin: 20px 0;
+    }
+    .loading.active {
+      display: block;
+    }
+    .spinner {
+      border: 4px solid rgba(0, 0, 0, 0.1);
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border-left-color: #09f;
+      animation: spin 1s linear infinite;
+      margin: 0 auto;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <h1>TokenFlo Pattern Optimizer Demo</h1>
+  
+  <p>This demo shows how the TokenFlo Pattern Optimizer works in the browser. Enter your prompt text below and click "Optimize" to see the results.</p>
+  
+  <div class="container">
+    <div class="column">
+      <h2>Original Prompt</h2>
+      <textarea id="originalText" placeholder="Enter your prompt here...">I would like you to provide a comprehensive analysis of the current market trends in the renewable energy sector. Please make sure to include information about solar, wind, and hydroelectric power. It would be great if you could also discuss the impact of recent government policies on the industry.</textarea>
+      
+      <div>
+        <label for="aggressiveness">Optimization Level:</label>
+        <select id="aggressiveness">
+          <option value="low">Low</option>
+          <option value="medium" selected>Medium</option>
+          <option value="high">High</option>
+        </select>
+        
+        <label for="model" style="margin-left: 15px;">Model:</label>
+        <select id="model">
+          <option value="gpt-3.5-turbo" selected>GPT-3.5 Turbo</option>
+          <option value="gpt-4">GPT-4</option>
+          <option value="claude-2">Claude 2</option>
+        </select>
+      </div>
+      
+      <button id="optimizeBtn" style="margin-top: 10px;">Optimize Prompt</button>
+      
+      <div id="loading" class="loading">
+        <div class="spinner"></div>
+        <p>Optimizing...</p>
+      </div>
+    </div>
+    
+    <div class="column">
+      <h2>Optimized Prompt</h2>
+      <textarea id="optimizedText" readonly placeholder="Optimized text will appear here..."></textarea>
+      
+      <div class="metrics" id="metrics" style="display: none;">
+        <h3>Optimization Metrics</h3>
+        <div class="metric">
+          <span>Original Tokens:</span>
+          <strong id="originalTokens">0</strong>
+        </div>
+        <div class="metric">
+          <span>Optimized Tokens:</span>
+          <strong id="optimizedTokens">0</strong>
+        </div>
+        <div class="metric">
+          <span>Tokens Saved:</span>
+          <strong id="tokensSaved">0</strong>
+        </div>
+        <div class="metric">
+          <span>Percent Reduction:</span>
+          <strong id="percentSaved">0%</strong>
+        </div>
+      </div>
+      
+      <div class="patterns" id="patterns" style="display: none;">
+        <h3>Applied Patterns</h3>
+        <ul id="patternsList"></ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Load the library from CDN (in production) -->
+  <!-- <script src="https://unpkg.com/tokenflo-pattern-optimizer@0.1.0/dist/browser/index.js"></script> -->
+  
+  <!-- For local testing, load the built file -->
+  <script src="../dist/browser/index.js"></script>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const originalTextArea = document.getElementById('originalText');
+      const optimizedTextArea = document.getElementById('optimizedText');
+      const optimizeBtn = document.getElementById('optimizeBtn');
+      const aggressivenessSelect = document.getElementById('aggressiveness');
+      const modelSelect = document.getElementById('model');
+      const metricsDiv = document.getElementById('metrics');
+      const patternsDiv = document.getElementById('patterns');
+      const patternsList = document.getElementById('patternsList');
+      const loadingDiv = document.getElementById('loading');
+      
+      // Elements for metrics
+      const originalTokensEl = document.getElementById('originalTokens');
+      const optimizedTokensEl = document.getElementById('optimizedTokens');
+      const tokensSavedEl = document.getElementById('tokensSaved');
+      const percentSavedEl = document.getElementById('percentSaved');
+      
+      optimizeBtn.addEventListener('click', function() {
+        const text = originalTextArea.value.trim();
+        if (!text) {
+          alert('Please enter some text to optimize');
+          return;
+        }
+        
+        // Show loading indicator
+        loadingDiv.classList.add('active');
+        metricsDiv.style.display = 'none';
+        patternsDiv.style.display = 'none';
+        
+        // Use setTimeout to allow the UI to update before processing
+        setTimeout(() => {
+          try {
+            // Create optimizer with selected options
+            const optimizer = new TokenFloOptimizer.PromptOptimizer({
+              model: modelSelect.value,
+              aggressiveness: aggressivenessSelect.value,
+              includePerformanceMetrics: true
+            });
+            
+            // Optimize the text
+            const result = optimizer.optimize(text);
+            
+            // Update the UI with results
+            optimizedTextArea.value = result.optimizedText;
+            
+            // Update metrics
+            originalTokensEl.textContent = result.originalTokenCount;
+            optimizedTokensEl.textContent = result.optimizedTokenCount;
+            tokensSavedEl.textContent = result.tokensSaved;
+            percentSavedEl.textContent = result.percentSaved.toFixed(2) + '%';
+            
+            // Show patterns applied
+            patternsList.innerHTML = '';
+            if (result.appliedPatterns.length > 0) {
+              result.appliedPatterns.forEach(pattern => {
+                const li = document.createElement('li');
+                li.textContent = `${pattern.description} (${pattern.category})`;
+                patternsList.appendChild(li);
+              });
+            } else {
+              const li = document.createElement('li');
+              li.textContent = 'No patterns were applied';
+              patternsList.appendChild(li);
+            }
+            
+            // Show metrics and patterns
+            metricsDiv.style.display = 'block';
+            patternsDiv.style.display = 'block';
+            
+            // Log performance metrics if available
+            if (result.performanceMetrics) {
+              console.log('Performance:', {
+                executionTime: result.performanceMetrics.executionTimeMs + 'ms',
+                tokensPerSecond: result.performanceMetrics.tokensPerSecond.toFixed(0) + ' tokens/sec'
+              });
+            }
+          } catch (error) {
+            console.error('Optimization error:', error);
+            alert('Error optimizing text: ' + error.message);
+          } finally {
+            // Hide loading indicator
+            loadingDiv.classList.remove('active');
+          }
+        }, 50);
+      });
+    });
+  </script>
+</body>
+</html>
