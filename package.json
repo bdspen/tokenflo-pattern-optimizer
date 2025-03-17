@@ -1,6 +1,6 @@
 {
   "name": "tokenflo-pattern-optimizer",
-  "version": "0.2.0",
+  "version": "1.0.0",
   "description": "A rule-based optimizer for reducing token usage in AI prompts without API calls",
   "main": "dist/cjs/index.js",
   "module": "dist/esm/index.js",
