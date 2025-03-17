@@ -5,6 +5,7 @@ import { formattingPatterns } from './formatting-patterns';
 import { instructionalPatterns } from './instructional-patterns';
 import { technicalPatterns } from './technical-patterns';
 import { rolePatterns } from './role-patterns';
+import { structuralPatterns } from './structural-patterns';
 
 // All available pattern categories
 const CATEGORIES = [
@@ -13,7 +14,8 @@ const CATEGORIES = [
   'formatting',
   'instructional',
   'technical',
-  'role'
+  'role',
+  'structural'
 ];
 
 /**
@@ -27,7 +29,8 @@ export function getAllPatterns(): OptimizationPattern[] {
     ...formattingPatterns,
     ...instructionalPatterns,
     ...technicalPatterns,
-    ...rolePatterns
+    ...rolePatterns,
+    ...structuralPatterns
   ];
 }
 
@@ -54,6 +57,8 @@ export function getPatternsByCategory(category: string): OptimizationPattern[] {
       return technicalPatterns;
     case 'role':
       return rolePatterns;
+    case 'structural':
+      return structuralPatterns;
     default:
       return [];
   }
@@ -72,19 +77,29 @@ export function getPatternsByAggressiveness(level: 'low' | 'medium' | 'high'): O
       // Only include patterns that don't change meaning
       return allPatterns.filter(pattern =>
         pattern.category === 'filler' ||
-        pattern.category === 'formatting'
+        pattern.category === 'formatting' ||
+        (pattern.category === 'structural' && pattern.priority && pattern.priority < 60)
       );
 
     case 'medium':
-      // Include all except the most aggressive patterns
+      // Include moderate patterns that preserve essential meaning
       return allPatterns.filter(pattern =>
-        (pattern.category !== 'technical' && pattern.category !== 'role') ||
-        ((pattern.category === 'technical' || pattern.category === 'role') && pattern.priority && pattern.priority < 80)
+        pattern.category === 'filler' ||
+        pattern.category === 'formatting' ||
+        pattern.category === 'verbosity' ||
+        (pattern.category === 'structural' && pattern.priority && pattern.priority < 80) ||
+        (pattern.category === 'instructional' && pattern.priority && pattern.priority < 90) ||
+        ((pattern.category === 'technical' || pattern.category === 'role') && pattern.priority && pattern.priority < 70)
       );
 
     case 'high':
-      // Include all patterns
-      return allPatterns;
+      // Include all patterns, prioritizing structural patterns
+      return [
+        // First apply structural patterns for maximum effect
+        ...allPatterns.filter(pattern => pattern.category === 'structural'),
+        // Then apply other patterns
+        ...allPatterns.filter(pattern => pattern.category !== 'structural')
+      ];
 
     default:
       return allPatterns;
@@ -105,4 +120,5 @@ export * from './filler-patterns';
 export * from './formatting-patterns';
 export * from './instructional-patterns';
 export * from './technical-patterns';
-export * from './role-patterns'; 
+export * from './role-patterns';
+export * from './structural-patterns';

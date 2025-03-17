@@ -2,6 +2,7 @@ import { OptimizationPattern, PatternCategory } from '../types';
 import metaPatterns from '../patterns/meta-patterns';
 import { technicalPatterns } from '../patterns/technical-patterns';
 import { rolePatterns } from '../patterns/role-patterns';
+import { structuralPatterns } from '../patterns/structural-patterns';
 import { OptimizerError } from './base-optimizer';
 
 /**
@@ -33,6 +34,7 @@ class PatternRegistry {
     this.registerPatterns(metaPatterns);
     this.registerPatterns(technicalPatterns);
     this.registerPatterns(rolePatterns);
+    this.registerPatterns(structuralPatterns);
   }
 
   /**
